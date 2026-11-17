@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ElementMaster - Chemistry Card Game</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Font: Inter & Orbitron for sci-fi chemistry vibe -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        tech: ['Orbitron', 'sans-serif'],
+                    },
+                    colors: {
+                        nonmetal: '#3b82f6',
+                        alkali: '#f97316',
+                        transition: '#eab308',
+                        halogen: '#10b981',
+                        actinide: '#ec4899',
+                        darkbg: '#0f172a',
+                        cardbg: '#1e293b'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0b0f19;
+            color: #f1f5f9;
+            user-select: none;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* LIGHT THEME STYLES */
+        body.light-theme {
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+        body.light-theme header {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-color: #e2e8f0;
+        }
+        body.light-theme .bg-slate-900, 
+        body.light-theme .bg-slate-950 {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            border-color: #e2e8f0 !important;
+        }
+        body.light-theme .bg-slate-900\/60,
+        body.light-theme .bg-slate-900\/80,
+        body.light-theme .bg-slate-900\/90,
+        body.light-theme .bg-slate-900\/95,
+        body.light-theme .bg-slate-950\/40,
+        body.light-theme .bg-slate-950\/50,
+        body.light-theme .bg-slate-950\/60,
+        body.light-theme .bg-slate-950\/80 {
+            background-color: rgba(241, 245, 249, 0.85) !important;
+            color: #0f172a !important;
+            border-color: #cbd5e1 !important;
+        }
+        body.light-theme .bg-slate-800 {
+            background-color: #f1f5f9 !important;
+            color: #1e293b !important;
+            border-color: #cbd5e1 !important;
+        }
+        body.light-theme .border-slate-800,
+        body.light-theme .border-slate-700 {
+            border-color: #cbd5e1 !important;
+        }
+        body.light-theme .text-slate-100,
+        body.light-theme .text-slate-200,
+        body.light-theme .text-slate-300 {
+            color: #1e293b !important;
+        }
+        body.light-theme .text-slate-400,
+        body.light-theme .text-slate-500 {
+            color: #64748b !important;
+        }
+        body.light-theme footer {
+            background-color: #f1f5f9 !important;
+            border-color: #e2e8f0 !important;
+        }
+
+        /* 3D Card Flip Effects */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .transform-style-3d {
+            transform-style: preserve-3d;
+        }
+        .backface-hidden {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+
+        /* Glow effects */
+        .glow-nonmetal { box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); border-color: #3b82f6; }
+        .glow-alkali { box-shadow: 0 0 15px rgba(249, 115, 22, 0.4); border-color: #f97316; }
+        .glow-transition { box-shadow: 0 0 15px rgba(234, 179, 8, 0.4); border-color: #eab308; }
+        .glow-halogen { box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); border-color: #10b981; }
+        .glow-actinide { box-shadow: 0 0 15px rgba(236, 72, 153, 0.4); border-color: #ec4899; }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        /* Pulse orbital animation */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        .orbit-pulse {
+            animation: pulse-ring 3s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between font-sans antialiased bg-slate-950 text-slate-100 selection:bg-cyan-500 selection:text-white">
+
+    <!-- HEADER / NAVIGATION BAR -->
+    <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Brand Title -->
+                <div class="flex items-center space-x-3 cursor-pointer" onclick="switchMode('codex')">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                        <i class="fa-solid fa-flask text-xl text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-tech text-xl font-bold tracking-wider bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">ELEMENT<span class="text-white">MASTER</span></h1>
+                        <p class="text-[10px] text-slate-400 uppercase tracking-widest -mt-1">Periodic Table Trainer</p>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <nav class="hidden md:flex space-x-1 lg:space-x-2">
+                    <button id="nav-study" onclick="switchMode('study')" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-1.5 text-slate-300 hover:bg-slate-800 hover:text-white">
+                        <i class="fa-solid fa-layer-group text-cyan-400"></i>
+                        <span>Study Cards</span>
+                    </button>
+                    <button id="nav-recall" onclick="switchMode('recall')" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-1.5 text-slate-300 hover:bg-slate-800 hover:text-white">
+                        <i class="fa-solid fa-pen-to-square text-rose-400"></i>
+                        <span>Recall Challenge</span>
+                    </button>
+                    <button id="nav-match" onclick="switchMode('match')" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-1.5 text-slate-300 hover:bg-slate-800 hover:text-white">
+                        <i class="fa-solid fa-puzzle-piece text-emerald-400"></i>
+                        <span>Memory Match</span>
+                    </button>
+                    <button id="nav-quiz" onclick="switchMode('quiz')" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-1.5 text-slate-300 hover:bg-slate-800 hover:text-white">
+                        <i class="fa-solid fa-bolt text-amber-400"></i>
+                        <span>Quiz Blitz</span>
+                    </button>
+                    <button id="nav-codex" onclick="switchMode('codex')" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-1.5 text-slate-300 hover:bg-slate-800 hover:text-white">
+                        <i class="fa-solid fa-book-bookmark text-purple-400"></i>
+                        <span>Element Codex</span>
+                    </button>
+                </nav>
+
+                <!-- Audio Toggle, Theme Switcher & Mastered Badge -->
+                <div class="flex items-center space-x-2.5">
+                    <button id="theme-toggle-btn" onclick="toggleTheme()" class="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition border border-slate-700" title="Toggle Light/Dark Theme">
+                        <i id="theme-icon" class="fa-solid fa-sun text-amber-400"></i>
+                    </button>
+
+                    <button id="audio-toggle-btn" onclick="toggleAudio()" class="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition border border-slate-700" title="Toggle Sound FX">
+                        <i id="audio-icon" class="fa-solid fa-volume-high text-cyan-400"></i>
+                    </button>
+
+                    <div class="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/80">
+                        <i class="fa-solid fa-award text-amber-400"></i>
+                        <span id="mastery-counter" class="text-xs font-semibold text-slate-200">0/10 Mastered</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Bottom Nav -->
+        <div class="md:hidden flex justify-around border-t border-slate-800 bg-slate-900/95 py-2 px-1">
+            <button onclick="switchMode('study')" class="mobile-nav-btn text-[11px] flex flex-col items-center py-1 px-1 text-cyan-400">
+                <i class="fa-solid fa-layer-group text-base"></i>
+                <span class="mt-0.5">Study</span>
+            </button>
+            <button onclick="switchMode('recall')" class="mobile-nav-btn text-[11px] flex flex-col items-center py-1 px-1 text-slate-400">
+                <i class="fa-solid fa-pen-to-square text-base"></i>
+                <span class="mt-0.5">Recall</span>
+            </button>
+            <button onclick="switchMode('match')" class="mobile-nav-btn text-[11px] flex flex-col items-center py-1 px-1 text-slate-400">
+                <i class="fa-solid fa-puzzle-piece text-base"></i>
+                <span class="mt-0.5">Match</span>
+            </button>
+            <button onclick="switchMode('quiz')" class="mobile-nav-btn text-[11px] flex flex-col items-center py-1 px-1 text-slate-400">
+                <i class="fa-solid fa-bolt text-base"></i>
+                <span class="mt-0.5">Quiz</span>
+            </button>
+            <button onclick="switchMode('codex')" class="mobile-nav-btn text-[11px] flex flex-col items-center py-1 px-1 text-slate-400">
+                <i class="fa-solid fa-book-bookmark text-base"></i>
+                <span class="mt-0.5">Codex</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+
+        <!-- ================= MODE 1: STUDY FLASHCARDS ================= -->
+        <section id="mode-study" class="space-y-6">
+            <!-- Controls Bar -->
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+                <div class="flex items-center space-x-3 w-full sm:w-auto">
+                    <span class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Select Element:</span>
+                    <select id="study-select" onchange="loadStudyCard(this.value)" class="bg-slate-800 border border-slate-700 text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 flex-grow sm:flex-grow-0">
+                        <!-- Options populated dynamically -->
+                    </select>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button onclick="prevStudyCard()" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium transition flex items-center space-x-2 border border-slate-700">
+                        <i class="fa-solid fa-chevron-left"></i> <span>Prev</span>
+                    </button>
+                    <span id="study-progress-text" class="text-xs font-tech text-cyan-400 px-2">1 / 10</span>
+                    <button onclick="nextStudyCard()" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium transition flex items-center space-x-2 border border-slate-700">
+                        <span>Next</span> <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Flashcard Container -->
+            <div class="max-w-xl mx-auto perspective-1000 my-8">
+                <div id="flashcard" onclick="flipStudyCard()" class="relative w-full h-[460px] cursor-pointer transform-style-3d transition-transform duration-700 rounded-3xl shadow-2xl border-2 border-slate-700 bg-slate-900">
+                    
+                    <!-- FRONT OF CARD -->
+                    <div id="card-front" class="absolute inset-0 backface-hidden rounded-3xl p-6 flex flex-col justify-between overflow-hidden bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border border-slate-800">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span id="card-front-number" class="font-tech text-3xl font-bold text-slate-400">1</span>
+                                <p class="text-xs text-slate-500 uppercase tracking-widest font-semibold mt-0.5">Atomic Number</p>
+                            </div>
+                            <span id="card-front-category" class="px-3 py-1 rounded-full text-xs font-semibold tracking-wide border uppercase">
+                                Non-metal
+                            </span>
+                        </div>
+
+                        <!-- Central Symbol & Name -->
+                        <div class="text-center py-4 relative">
+                            <div id="card-orbit-bg" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full border border-slate-800 orbit-pulse -z-0 opacity-40"></div>
+                            <h2 id="card-front-symbol" class="font-tech text-7xl font-extrabold tracking-tight my-2 drop-shadow-md text-white">H</h2>
+                            <p id="card-front-name" class="text-2xl font-bold text-slate-200">Hydrogen</p>
+                            <p id="card-front-mass" class="text-xs text-cyan-400 font-tech mt-1">1.008 u</p>
+                        </div>
+
+                        <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80 backdrop-blur-sm">
+                            <p class="text-xs text-slate-400 flex items-center justify-center space-x-1">
+                                <i class="fa-solid fa-atom text-cyan-400 mr-1"></i>
+                                <span id="card-front-config" class="font-mono text-slate-300">1s¹</span>
+                            </p>
+                        </div>
+
+                        <div class="text-center text-xs text-slate-500 flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-rotate text-cyan-500 animate-spin"></i>
+                            <span>Click or tap to flip for details</span>
+                        </div>
+                    </div>
+
+                    <!-- BACK OF CARD -->
+                    <div id="card-back" class="absolute inset-0 backface-hidden rotate-y-180 rounded-3xl p-6 flex flex-col justify-between bg-slate-900 border border-slate-800 overflow-y-auto">
+                        <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                            <h3 id="card-back-title" class="text-xl font-bold font-tech text-cyan-400">Hydrogen (H)</h3>
+                            <span id="card-back-group" class="text-xs font-mono bg-slate-800 text-slate-300 px-2.5 py-1 rounded-md border border-slate-700">Group 1, Period 1</span>
+                        </div>
+
+                        <div class="space-y-3 text-sm my-2">
+                            <div>
+                                <h4 class="text-xs uppercase tracking-wider text-slate-400 font-bold mb-1 flex items-center">
+                                    <i class="fa-solid fa-lightbulb text-amber-400 mr-1.5"></i> Primary Real-World Uses
+                                </h4>
+                                <p id="card-back-uses" class="text-slate-300 text-xs bg-slate-950/50 p-2.5 rounded-lg border border-slate-800/60 leading-relaxed">
+                                    Rocket fuel, ammonia production for fertilizers, fuel cells.
+                                </p>
+                            </div>
+
+                            <div>
+                                <h4 class="text-xs uppercase tracking-wider text-slate-400 font-bold mb-1 flex items-center">
+                                    <i class="fa-solid fa-star text-cyan-400 mr-1.5"></i> Fun Fact
+                                </h4>
+                                <p id="card-back-fact" class="text-slate-300 text-xs bg-slate-950/50 p-2.5 rounded-lg border border-slate-800/60 leading-relaxed italic">
+                                    Most abundant chemical substance in the Universe, making up 75% of all baryonic mass.
+                                </p>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2 text-xs">
+                                <div class="bg-slate-950/40 p-2 rounded-lg border border-slate-800">
+                                    <span class="text-slate-500 block">State at STP:</span>
+                                    <span id="card-back-state" class="font-semibold text-slate-200">Gas</span>
+                                </div>
+                                <div class="bg-slate-950/40 p-2 rounded-lg border border-slate-800">
+                                    <span class="text-slate-500 block">Discovered:</span>
+                                    <span id="card-back-discovered" class="font-semibold text-slate-200">1766 (Cavendish)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mastery Toggle Button -->
+                        <div class="pt-2 border-t border-slate-800 flex justify-between items-center">
+                            <button id="mastery-btn" onclick="event.stopPropagation(); toggleCardMastery();" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-xs transition flex items-center justify-center space-x-2 border border-slate-700">
+                                <i class="fa-regular fa-circle-check text-slate-400"></i>
+                                <span>Mark as Mastered</span>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ================= MODE 2: ACTIVE RECALL / CHALLENGE MODE ================= -->
+        <section id="mode-recall" class="hidden space-y-6">
+            <!-- Start / Summary Overlay -->
+            <div id="recall-start-screen" class="max-w-xl mx-auto text-center py-10 space-y-6 bg-slate-900/60 p-8 rounded-3xl border border-slate-800 shadow-2xl">
+                <div class="w-20 h-20 mx-auto rounded-3xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 text-4xl mb-2">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </div>
+                <h2 class="text-3xl font-tech font-bold text-white">Active Recall Challenge</h2>
+                <p class="text-slate-400 text-sm max-w-md mx-auto leading-relaxed">
+                    Test your memory! You'll be given element names. Fill in their exact <strong>Atomic Number</strong> and classify them as a <strong>Metal, Non-metal, or Metalloid</strong>.
+                </p>
+
+                <button onclick="startRecallChallenge()" class="px-8 py-3.5 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-tech font-bold rounded-xl shadow-lg shadow-rose-500/25 transition transform hover:scale-105">
+                    Start Challenge
+                </button>
+            </div>
+
+            <!-- Active Recall Form -->
+            <div id="recall-active-screen" class="hidden max-w-2xl mx-auto space-y-6">
+                <!-- Header Status -->
+                <div class="flex items-center justify-between bg-slate-900/90 p-4 rounded-2xl border border-slate-800">
+                    <span id="recall-progress-text" class="text-xs font-tech text-rose-400 font-bold">Element 1 of 10</span>
+                    <div class="flex items-center space-x-4">
+                        <span id="recall-score-live" class="text-xs font-bold text-slate-300">Score: 0 / 0</span>
+                    </div>
+                </div>
+
+                <!-- Recall Card & Inputs -->
+                <div class="bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-xl space-y-6">
+                    <div class="text-center py-4 bg-slate-950/60 rounded-2xl border border-slate-800">
+                        <span class="text-xs text-slate-500 font-semibold uppercase tracking-widest block mb-1">Target Element</span>
+                        <h3 id="recall-element-name" class="text-3xl font-tech font-bold text-white">Hydrogen</h3>
+                        <span id="recall-element-symbol" class="text-lg font-tech font-semibold text-cyan-400 mt-1 inline-block">Symbol: (H)</span>
+                    </div>
+
+                    <form id="recall-form" onsubmit="event.preventDefault(); submitRecallAnswer();" class="space-y-6">
+                        <!-- Input 1: Atomic Number -->
+                        <div class="space-y-2">
+                            <label class="text-xs uppercase tracking-wider text-slate-400 font-bold block">1. What is the Atomic Number?</label>
+                            <input type="number" id="recall-input-number" min="1" max="118" placeholder="Enter atomic number (e.g., 1)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-rose-500">
+                        </div>
+
+                        <!-- Input 2: Type Classification -->
+                        <div class="space-y-2">
+                            <label class="text-xs uppercase tracking-wider text-slate-400 font-bold block">2. Select Classification:</label>
+                            <div class="grid grid-cols-3 gap-3">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="recall-type" value="metal" class="peer sr-only" required>
+                                    <div class="p-3 text-center rounded-xl bg-slate-950 border border-slate-800 text-slate-300 text-xs font-semibold peer-checked:border-rose-500 peer-checked:bg-rose-500/10 peer-checked:text-rose-400 transition">
+                                        Metal
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="recall-type" value="nonmetal" class="peer sr-only" required>
+                                    <div class="p-3 text-center rounded-xl bg-slate-950 border border-slate-800 text-slate-300 text-xs font-semibold peer-checked:border-rose-500 peer-checked:bg-rose-500/10 peer-checked:text-rose-400 transition">
+                                        Non-metal
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="recall-type" value="metalloid" class="peer sr-only" required>
+                                    <div class="p-3 text-center rounded-xl bg-slate-950 border border-slate-800 text-slate-300 text-xs font-semibold peer-checked:border-rose-500 peer-checked:bg-rose-500/10 peer-checked:text-rose-400 transition">
+                                        Metalloid
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Submit / Action Buttons -->
+                        <div id="recall-action-container">
+                            <button type="submit" id="recall-submit-btn" class="w-full py-3.5 bg-rose-600 hover:bg-rose-500 text-white font-semibold text-sm rounded-xl transition shadow-lg shadow-rose-600/20">
+                                Check Answer
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Feedback Box -->
+                    <div id="recall-feedback-box" class="hidden p-4 rounded-xl text-xs sm:text-sm border space-y-2">
+                        <div id="recall-feedback-number" class="font-medium"></div>
+                        <div id="recall-feedback-type" class="font-medium"></div>
+                        <button onclick="nextRecallElement()" class="mt-3 w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold transition">
+                            Next Element <i class="fa-solid fa-arrow-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recall Results Summary -->
+            <div id="recall-summary-screen" class="hidden max-w-xl mx-auto text-center py-8 space-y-6 bg-slate-900/60 p-8 rounded-3xl border border-slate-800 shadow-2xl">
+                <h3 class="text-2xl font-tech font-bold text-white">Challenge Completed!</h3>
+                <div class="p-4 bg-slate-950/80 rounded-2xl border border-slate-800 flex justify-around">
+                    <div>
+                        <span class="text-xs text-slate-500 block uppercase font-medium">Final Score</span>
+                        <span id="recall-final-score" class="font-tech text-2xl font-bold text-rose-400">0 / 20</span>
+                    </div>
+                    <div class="border-r border-slate-800"></div>
+                    <div>
+                        <span class="text-xs text-slate-500 block uppercase font-medium">Accuracy</span>
+                        <span id="recall-final-accuracy" class="font-tech text-2xl font-bold text-emerald-400">0%</span>
+                    </div>
+                </div>
+
+                <div class="text-left space-y-2">
+                    <h4 class="text-xs uppercase tracking-wider text-slate-400 font-bold">Review Breakdown:</h4>
+                    <div id="recall-summary-list" class="max-h-60 overflow-y-auto space-y-2 text-xs">
+                        <!-- Dynamically populated summary items -->
+                    </div>
+                </div>
+
+                <button onclick="startRecallChallenge()" class="px-8 py-3 bg-rose-600 hover:bg-rose-500 text-white font-semibold rounded-xl text-xs transition">
+                    Try Again
+                </button>
+            </div>
+        </section>
+
+
+        <!-- ================= MODE 3: MEMORY MATCHING GAME ================= -->
+        <section id="mode-match" class="hidden space-y-6">
+            <!-- Score & Stats Bar -->
+            <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
+                <div class="flex items-center space-x-6">
+                    <div>
+                        <span class="text-xs text-slate-400 block uppercase font-medium">Moves</span>
+                        <span id="match-moves" class="font-tech text-2xl font-bold text-cyan-400">0</span>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-400 block uppercase font-medium">Matches</span>
+                        <span id="match-score" class="font-tech text-2xl font-bold text-emerald-400">0 / 6</span>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-400 block uppercase font-medium">Time</span>
+                        <span id="match-timer" class="font-tech text-2xl font-bold text-amber-400">00:00</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-3">
+                    <select id="match-mode-select" onchange="initMatchGame()" class="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2">
+                        <option value="symbol-name">Match Symbol ↔ Name</option>
+                        <option value="symbol-number">Match Symbol ↔ Atomic #</option>
+                        <option value="name-use">Match Element ↔ Real-World Use</option>
+                    </select>
+                    <button onclick="initMatchGame()" class="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-medium text-xs rounded-lg shadow-lg shadow-emerald-500/20 transition flex items-center space-x-2">
+                        <i class="fa-solid fa-rotate-right"></i>
+                        <span>Restart</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Memory Cards Grid -->
+            <div id="match-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 sm:gap-4 my-6">
+                <!-- Dynamic match cards inserted here -->
+            </div>
+        </section>
+
+
+        <!-- ================= MODE 4: QUIZ BLITZ ================= -->
+        <section id="mode-quiz" class="hidden space-y-6">
+            <!-- Quiz Dashboard Header -->
+            <div id="quiz-start-screen" class="max-w-xl mx-auto text-center py-12 space-y-6 bg-slate-900/60 p-8 rounded-3xl border border-slate-800 shadow-2xl">
+                <div class="w-20 h-20 mx-auto rounded-3xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 text-4xl mb-2">
+                    <i class="fa-solid fa-bolt"></i>
+                </div>
+                <h2 class="text-3xl font-tech font-bold text-white">Quiz Blitz Challenge</h2>
+                <p class="text-slate-400 text-sm max-w-md mx-auto leading-relaxed">
+                    Test your memory against the clock! Answer chemical symbol, atomic number, and real-world property questions to build streak multipliers and record high scores.
+                </p>
+
+                <div class="p-4 bg-slate-950/80 rounded-2xl border border-slate-800 max-w-sm mx-auto flex justify-around">
+                    <div>
+                        <span class="text-xs text-slate-500 block uppercase">High Score</span>
+                        <span id="quiz-high-score" class="font-tech text-xl font-bold text-amber-400">0</span>
+                    </div>
+                    <div class="border-r border-slate-800"></div>
+                    <div>
+                        <span class="text-xs text-slate-500 block uppercase">Best Streak</span>
+                        <span id="quiz-high-streak" class="font-tech text-xl font-bold text-cyan-400">0</span>
+                    </div>
+                </div>
+
+                <button onclick="startQuiz()" class="px-8 py-3.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-slate-950 font-tech font-bold rounded-xl shadow-lg shadow-amber-500/25 transition transform hover:scale-105">
+                    Start Quiz Blitz
+                </button>
+            </div>
+
+            <!-- Quiz Active Screen -->
+            <div id="quiz-active-screen" class="hidden max-w-2xl mx-auto space-y-6">
+                <!-- Status Header -->
+                <div class="flex items-center justify-between bg-slate-900/90 p-4 rounded-2xl border border-slate-800">
+                    <div class="flex items-center space-x-4">
+                        <div>
+                            <span class="text-[10px] text-slate-400 block uppercase font-bold">Score</span>
+                            <span id="quiz-score" class="font-tech text-xl font-bold text-amber-400">0</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-400 block uppercase font-bold">Streak</span>
+                            <span id="quiz-streak" class="font-tech text-xl font-bold text-cyan-400">🔥 0</span>
+                        </div>
+                    </div>
+
+                    <!-- Progress & Timer -->
+                    <div class="flex items-center space-x-4">
+                        <div class="text-right">
+                            <span id="quiz-question-num" class="text-xs font-tech text-slate-300">Question 1 / 10</span>
+                            <div class="w-32 h-2 bg-slate-800 rounded-full overflow-hidden mt-1">
+                                <div id="quiz-timer-bar" class="h-full bg-cyan-400 transition-all duration-100 ease-linear" style="width: 100%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Question Card -->
+                <div class="bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-xl space-y-6">
+                    <div class="flex items-center justify-between">
+                        <span id="quiz-category-tag" class="text-xs px-3 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700">Category Tag</span>
+                        <span id="quiz-points-preview" class="text-xs font-mono text-slate-400">+100 pts</span>
+                    </div>
+
+                    <h3 id="quiz-question-text" class="text-xl sm:text-2xl font-bold text-slate-100 min-h-[60px] flex items-center">
+                        What is the chemical symbol for Gold?
+                    </h3>
+
+                    <!-- Option Buttons -->
+                    <div id="quiz-options-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                        <!-- Populated dynamically -->
+                    </div>
+
+                    <!-- Feedback Banner -->
+                    <div id="quiz-feedback" class="hidden p-4 rounded-xl text-xs sm:text-sm font-medium border flex items-center justify-between">
+                        <span id="quiz-feedback-text">Explanation...</span>
+                        <button onclick="nextQuizQuestion()" class="ml-3 px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold shrink-0">
+                            Next <i class="fa-solid fa-arrow-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ================= MODE 5: ELEMENT CODEX ================= -->
+        <section id="mode-codex" class="hidden space-y-6">
+            <!-- Codex Header & Category Filters -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+                <div>
+                    <h2 class="text-xl font-tech font-bold text-white">Element Codex & Mastery Tracker</h2>
+                    <p class="text-xs text-slate-400">Explore chemical profiles and track your learning progress.</p>
+                </div>
+
+                <!-- Filter Pills -->
+                <div class="flex flex-wrap gap-2 text-xs">
+                    <button onclick="filterCodex('all')" class="codex-filter-btn active px-3 py-1.5 rounded-lg bg-slate-800 text-cyan-400 font-semibold border border-slate-700">All (10)</button>
+                    <button onclick="filterCodex('nonmetal')" class="codex-filter-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400 border border-slate-800 hover:text-white">Non-metals</button>
+                    <button onclick="filterCodex('metal')" class="codex-filter-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400 border border-slate-800 hover:text-white">Metals</button>
+                    <button onclick="filterCodex('metalloid')" class="codex-filter-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400 border border-slate-800 hover:text-white">Metalloids</button>
+                </div>
+            </div>
+
+            <!-- Codex Cards Grid -->
+            <div id="codex-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                <!-- Dynamically populated -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- AUDIO SYNTH & GAME LOGIC SCRIPT -->
+    <script>
+        /* ================= ELEMENT DATABASE (10 REQUIRED ELEMENTS) ================= */
+        const ELEMENTS = [
+            {
+                number: 1,
+                symbol: "H",
+                name: "Hydrogen",
+                mass: "1.008",
+                type: "nonmetal",
+                category: "nonmetal",
+                categoryLabel: "Non-metal",
+                config: "1s¹",
+                groupPeriod: "Group 1, Period 1",
+                state: "Gas",
+                discovered: "1766 (Henry Cavendish)",
+                uses: "Rocket propellant, ammonia synthesis for fertilizer, hydrogen fuel cells.",
+                fact: "Makes up approximately 75% of all elemental mass in the observable universe."
+            },
+            {
+                number: 2,
+                symbol: "He",
+                name: "Helium",
+                mass: "4.0026",
+                type: "nonmetal",
+                category: "nonmetal",
+                categoryLabel: "Non-metal (Noble Gas)",
+                config: "1s²",
+                groupPeriod: "Group 18, Period 1",
+                state: "Gas",
+                discovered: "1868 (Pierre Janssen & Norman Lockyer)",
+                uses: "Cooling superconducting magnets in MRI machines, party balloons, deep-sea diving gas.",
+                fact: "The second most abundant element in the universe, discovered in the Sun's spectrum before being found on Earth."
+            },
+            {
+                number: 6,
+                symbol: "C",
+                name: "Carbon",
+                mass: "12.011",
+                type: "nonmetal",
+                category: "nonmetal",
+                categoryLabel: "Non-metal",
+                config: "[He] 2s² 2p²",
+                groupPeriod: "Group 14, Period 2",
+                state: "Solid",
+                discovered: "Known since antiquity",
+                uses: "Structural basis for organic life, steel manufacturing, carbon fiber, diamond drills.",
+                fact: "Can form soft graphite or extremely hard diamond solely based on crystal bonding structure."
+            },
+            {
+                number: 7,
+                symbol: "N",
+                name: "Nitrogen",
+                mass: "14.007",
+                type: "nonmetal",
+                category: "nonmetal",
+                categoryLabel: "Non-metal",
+                config: "[He] 2s² 2p³",
+                groupPeriod: "Group 15, Period 2",
+                state: "Gas",
+                discovered: "1772 (Daniel Rutherford)",
+                uses: "Food packaging gas, agricultural fertilizers, cryogenics (liquid nitrogen).",
+                fact: "Gaseous nitrogen makes up about 78% of Earth's atmosphere."
+            },
+            {
+                number: 8,
+                symbol: "O",
+                name: "Oxygen",
+                mass: "15.999",
+                type: "nonmetal",
+                category: "nonmetal",
+                categoryLabel: "Non-metal",
+                config: "[He] 2s² 2p⁴",
+                groupPeriod: "Group 16, Period 2",
+                state: "Gas",
+                discovered: "1774 (Joseph Priestley)",
+                uses: "Cellular respiration for animal life, medical oxygen tanks, steelmaking.",
+                fact: "Liquid oxygen is pale blue and paramagnetic, meaning it is attracted to magnetic fields."
+            },
+            {
+                number: 11,
+                symbol: "Na",
+                name: "Sodium",
+                mass: "22.990",
+                type: "metal",
+                category: "alkali",
+                categoryLabel: "Alkali Metal",
+                config: "[Ne] 3s¹",
+                groupPeriod: "Group 1, Period 3",
+                state: "Solid",
+                discovered: "1807 (Humphry Davy)",
+                uses: "Table salt (NaCl), street lamps, fast-breeder nuclear reactor coolants.",
+                fact: "Soft enough to cut with a butter knife and reacts violently with water."
+            },
+            {
+                number: 14,
+                symbol: "Si",
+                name: "Silicon",
+                mass: "28.085",
+                type: "metalloid",
+                category: "metalloid",
+                categoryLabel: "Metalloid",
+                config: "[Ne] 3s² 3p²",
+                groupPeriod: "Group 14, Period 3",
+                state: "Solid",
+                discovered: "1824 (Jöns Jacob Berzelius)",
+                uses: "Semiconductors for microchips, solar panels, glass, and silicone polymers.",
+                fact: "Makes up over 28% of the Earth's crust by mass, second only to oxygen."
+            },
+            {
+                number: 17,
+                symbol: "Cl",
+                name: "Chlorine",
+                mass: "35.45",
+                type: "nonmetal",
+                category: "halogen",
+                categoryLabel: "Halogen Non-metal",
+                config: "[Ne] 3s² 3p⁵",
+                groupPeriod: "Group 17, Period 3",
+                state: "Gas",
+                discovered: "1774 (Carl Wilhelm Scheele)",
+                uses: "Water purification/disinfection, PVC piping manufacture, household bleach.",
+                fact: "A toxic yellow-green gas that combines with sodium to make essential table salt."
+            },
+            {
+                number: 26,
+                symbol: "Fe",
+                name: "Iron",
+                mass: "55.845",
+                type: "metal",
+                category: "transition",
+                categoryLabel: "Transition Metal",
+                config: "[Ar] 3d⁶ 4s²",
+                groupPeriod: "Group 8, Period 4",
+                state: "Solid",
+                discovered: "Prehistoric era",
+                uses: "Steel alloy construction, structural beams, tools, hemoglobin oxygen transport.",
+                fact: "Iron is the most common element on Earth by mass, forming much of Earth's core."
+            },
+            {
+                number: 79,
+                symbol: "Au",
+                name: "Gold",
+                mass: "196.97",
+                type: "metal",
+                category: "transition",
+                categoryLabel: "Transition Metal",
+                config: "[Xe] 4f¹⁴ 5d¹⁰ 6s¹",
+                groupPeriod: "Group 11, Period 6",
+                state: "Solid",
+                discovered: "c. 4000 BC",
+                uses: "Jewelry, electronic connectors, space helmet radiation visors.",
+                fact: "So malleable that a single gram can be beaten into a sheet 1 square meter in area."
+            }
+        ];
+
+        /* ================= STATE MANAGEMENT ================= */
+        let currentMode = 'study';
+        let currentStudyIndex = 0;
+        let isCardFlipped = false;
+        let masteredElements = JSON.parse(localStorage.getItem('elementmaster_mastered') || '[]');
+        let audioEnabled = true;
+        let isLightTheme = localStorage.getItem('elementmaster_theme') === 'light';
+
+        // Recall Mode State
+        let recallIndex = 0;
+        let recallScore = 0;
+        let recallResults = [];
+        let recallShuffledElements = [];
+
+        // Match Game State
+        let matchCards = [];
+        let flippedMatchCards = [];
+        let matchedPairsCount = 0;
+        let matchMoves = 0;
+        let matchTimerInterval = null;
+        let matchSeconds = 0;
+
+        // Quiz State
+        let quizCurrentQuestion = 0;
+        let quizScore = 0;
+        let quizStreak = 0;
+        let quizTimerInterval = null;
+        let quizTimeLeft = 10;
+        let quizQuestions = [];
+        let quizHighScore = parseInt(localStorage.getItem('elementmaster_quiz_high') || '0');
+        let quizHighStreak = parseInt(localStorage.getItem('elementmaster_streak_high') || '0');
+
+        /* ================= THEME TOGGLE ================= */
+        function applyTheme() {
+            const btn = document.getElementById('theme-toggle-btn');
+            const icon = document.getElementById('theme-icon');
+            if (isLightTheme) {
+                document.body.classList.add('light-theme');
+                icon.className = "fa-solid fa-moon text-indigo-500";
+            } else {
+                document.body.classList.remove('light-theme');
+                icon.className = "fa-solid fa-sun text-amber-400";
+            }
+        }
+
+        function toggleTheme() {
+            playSynthSound('click');
+            isLightTheme = !isLightTheme;
+            localStorage.setItem('elementmaster_theme', isLightTheme ? 'light' : 'dark');
+            applyTheme();
+        }
+
+        /* ================= WEB AUDIO SYNTHESIZER ================= */
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function playSynthSound(type) {
+            if (!audioEnabled) return;
+            try {
+                if (!audioCtx) audioCtx = new AudioContext();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'flip') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(600, now + 0.08);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'match') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.setValueAtTime(554.37, now + 0.1);
+                    osc.frequency.setValueAtTime(659.25, now + 0.2);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.linearRampToValueAtTime(120, now + 0.2);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                } else if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(800, now);
+                    gain.gain.setValueAtTime(0.05, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+                    osc.start(now);
+                    osc.stop(now + 0.04);
+                }
+            } catch (e) {}
+        }
+
+        function toggleAudio() {
+            audioEnabled = !audioEnabled;
+            const icon = document.getElementById('audio-icon');
+            if (audioEnabled) {
+                icon.className = "fa-solid fa-volume-high text-cyan-400";
+                playSynthSound('click');
+            } else {
+                icon.className = "fa-solid fa-volume-xmark text-slate-500";
+            }
+        }
+
+        /* ================= COLOR CLASS HELPER ================= */
+        function getCategoryColorClass(cat) {
+            switch(cat) {
+                case 'nonmetal': return { border: 'border-blue-500', text: 'text-blue-400', bg: 'bg-blue-500/10', glow: 'glow-nonmetal' };
+                case 'alkali': return { border: 'border-orange-500', text: 'text-orange-400', bg: 'bg-orange-500/10', glow: 'glow-alkali' };
+                case 'transition': return { border: 'border-amber-500', text: 'text-amber-400', bg: 'bg-amber-500/10', glow: 'glow-transition' };
+                case 'halogen': return { border: 'border-emerald-500', text: 'text-emerald-400', bg: 'bg-emerald-500/10', glow: 'glow-halogen' };
+                case 'metal': return { border: 'border-orange-500', text: 'text-orange-400', bg: 'bg-orange-500/10', glow: 'glow-alkali' };
+                case 'metalloid': return { border: 'border-purple-500', text: 'text-purple-400', bg: 'bg-purple-500/10', glow: 'glow-actinide' };
+                default: return { border: 'border-cyan-500', text: 'text-cyan-400', bg: 'bg-cyan-500/10', glow: '' };
+            }
+        }
+
+        /* ================= INITIALIZATION & NAVIGATION ================= */
+        window.onload = function() {
+            applyTheme();
+            initStudySelect();
+            loadStudyCard(0);
+            renderCodex();
+            updateMasteryCounter();
+            updateQuizHighScores();
+        };
+
+        function switchMode(mode) {
+            playSynthSound('click');
+            currentMode = mode;
+
+            document.getElementById('mode-study').classList.add('hidden');
+            document.getElementById('mode-recall').classList.add('hidden');
+            document.getElementById('mode-match').classList.add('hidden');
+            document.getElementById('mode-quiz').classList.add('hidden');
+            document.getElementById('mode-codex').classList.add('hidden');
+
+            document.getElementById(`mode-${mode}`).classList.remove('hidden');
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-slate-800', 'text-white');
+                btn.classList.add('text-slate-300');
+            });
+            const activeNav = document.getElementById(`nav-${mode}`);
+            if (activeNav) {
+                activeNav.classList.add('bg-slate-800', 'text-white');
+            }
+
+            if (mode === 'match') {
+                initMatchGame();
+            } else if (mode === 'quiz') {
+                resetQuizToStartScreen();
+            } else if (mode === 'recall') {
+                resetRecallToStartScreen();
+            }
+        }
+
+        function updateMasteryCounter() {
+            document.getElementById('mastery-counter').innerText = `${masteredElements.length}/10 Mastered`;
+            localStorage.setItem('elementmaster_mastered', JSON.stringify(masteredElements));
+        }
+
+        /* ================= MODE 1: STUDY FLASHCARDS LOGIC ================= */
+        function initStudySelect() {
+            const select = document.getElementById('study-select');
+            select.innerHTML = '';
+            ELEMENTS.forEach((el, index) => {
+                const opt = document.createElement('option');
+                opt.value = index;
+                opt.innerText = `${el.number}. ${el.name} (${el.symbol})`;
+                select.appendChild(opt);
+            });
+        }
+
+        function loadStudyCard(index) {
+            currentStudyIndex = parseInt(index);
+            const el = ELEMENTS[currentStudyIndex];
+            const colors = getCategoryColorClass(el.category);
+
+            const card = document.getElementById('flashcard');
+            card.classList.remove('rotate-y-180');
+            isCardFlipped = false;
+
+            document.getElementById('card-front-number').innerText = el.number;
+            document.getElementById('card-front-symbol').innerText = el.symbol;
+            document.getElementById('card-front-symbol').className = `font-tech text-7xl font-extrabold tracking-tight my-2 drop-shadow-md ${colors.text}`;
+            document.getElementById('card-front-name').innerText = el.name;
+            document.getElementById('card-front-mass').innerText = `${el.mass} u`;
+            document.getElementById('card-front-config').innerText = el.config;
+
+            const categoryBadge = document.getElementById('card-front-category');
+            categoryBadge.innerText = el.categoryLabel;
+            categoryBadge.className = `px-3 py-1 rounded-full text-xs font-semibold tracking-wide border uppercase ${colors.border} ${colors.text} ${colors.bg}`;
+
+            card.className = `relative w-full h-[460px] cursor-pointer transform-style-3d transition-transform duration-700 rounded-3xl shadow-2xl border-2 ${colors.border} ${colors.glow} bg-slate-900`;
+
+            document.getElementById('card-back-title').innerText = `${el.name} (${el.symbol})`;
+            document.getElementById('card-back-title').className = `text-xl font-bold font-tech ${colors.text}`;
+            document.getElementById('card-back-group').innerText = el.groupPeriod;
+            document.getElementById('card-back-uses').innerText = el.uses;
+            document.getElementById('card-back-fact').innerText = `"${el.fact}"`;
+            document.getElementById('card-back-state').innerText = el.state;
+            document.getElementById('card-back-discovered').innerText = el.discovered;
+
+            document.getElementById('study-select').value = currentStudyIndex;
+            document.getElementById('study-progress-text').innerText = `${currentStudyIndex + 1} / 10`;
+
+            updateMasteryButtonUI();
+        }
+
+        function flipStudyCard() {
+            playSynthSound('flip');
+            const card = document.getElementById('flashcard');
+            isCardFlipped = !isCardFlipped;
+            if (isCardFlipped) {
+                card.classList.add('rotate-y-180');
+            } else {
+                card.classList.remove('rotate-y-180');
+            }
+        }
+
+        function prevStudyCard() {
+            let nextIndex = currentStudyIndex - 1;
+            if (nextIndex < 0) nextIndex = ELEMENTS.length - 1;
+            loadStudyCard(nextIndex);
+        }
+
+        function nextStudyCard() {
+            let nextIndex = (currentStudyIndex + 1) % ELEMENTS.length;
+            loadStudyCard(nextIndex);
+        }
+
+        function toggleCardMastery() {
+            playSynthSound('click');
+            const elNumber = ELEMENTS[currentStudyIndex].number;
+            const idx = masteredElements.indexOf(elNumber);
+            if (idx > -1) {
+                masteredElements.splice(idx, 1);
+            } else {
+                masteredElements.push(elNumber);
+            }
+            updateMasteryCounter();
+            updateMasteryButtonUI();
+            renderCodex();
+        }
+
+        function updateMasteryButtonUI() {
+            const elNumber = ELEMENTS[currentStudyIndex].number;
+            const isMastered = masteredElements.includes(elNumber);
+            const btn = document.getElementById('mastery-btn');
+            if (isMastered) {
+                btn.className = "w-full py-2.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 font-medium text-xs transition flex items-center justify-center space-x-2 border border-emerald-500/50";
+                btn.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i><span>Mastered Element</span>`;
+            } else {
+                btn.className = "w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-xs transition flex items-center justify-center space-x-2 border border-slate-700";
+                btn.innerHTML = `<i class="fa-regular fa-circle-check text-slate-400"></i><span>Mark as Mastered</span>`;
+            }
+        }
+
+
+        /* ================= MODE 2: RECALL CHALLENGE LOGIC ================= */
+        function resetRecallToStartScreen() {
+            document.getElementById('recall-start-screen').classList.remove('hidden');
+            document.getElementById('recall-active-screen').classList.add('hidden');
+            document.getElementById('recall-summary-screen').classList.add('hidden');
+        }
+
+        function startRecallChallenge() {
+            playSynthSound('click');
+            recallIndex = 0;
+            recallScore = 0;
+            recallResults = [];
+            recallShuffledElements = [...ELEMENTS].sort(() => 0.5 - Math.random());
+
+            document.getElementById('recall-start-screen').classList.add('hidden');
+            document.getElementById('recall-summary-screen').classList.add('hidden');
+            document.getElementById('recall-active-screen').classList.remove('hidden');
+
+            renderRecallQuestion();
+        }
+
+        function renderRecallQuestion() {
+            const el = recallShuffledElements[recallIndex];
+            document.getElementById('recall-progress-text').innerText = `Element ${recallIndex + 1} of ${recallShuffledElements.length}`;
+            document.getElementById('recall-score-live').innerText = `Score: ${recallScore} / ${recallIndex * 2}`;
+            
+            document.getElementById('recall-element-name').innerText = el.name;
+            document.getElementById('recall-element-symbol').innerText = `Symbol: (${el.symbol})`;
+
+            // Reset Form Inputs
+            document.getElementById('recall-input-number').value = '';
+            document.querySelectorAll('input[name="recall-type"]').forEach(r => r.checked = false);
+
+            document.getElementById('recall-action-container').classList.remove('hidden');
+            document.getElementById('recall-feedback-box').classList.add('hidden');
+        }
+
+        function submitRecallAnswer() {
+            const el = recallShuffledElements[recallIndex];
+            const inputNum = parseInt(document.getElementById('recall-input-number').value);
+            const selectedType = document.querySelector('input[name="recall-type"]:checked')?.value;
+
+            const isNumCorrect = inputNum === el.number;
+            const isTypeCorrect = selectedType === el.type;
+
+            let pointsEarned = 0;
+            if (isNumCorrect) pointsEarned++;
+            if (isTypeCorrect) pointsEarned++;
+            recallScore += pointsEarned;
+
+            if (isNumCorrect && isTypeCorrect) {
+                playSynthSound('match');
+            } else {
+                playSynthSound('wrong');
+            }
+
+            // Display Feedback Box
+            const numFeedback = document.getElementById('recall-feedback-number');
+            const typeFeedback = document.getElementById('recall-feedback-type');
+
+            numFeedback.innerHTML = isNumCorrect 
+                ? `<span class="text-emerald-400"><i class="fa-solid fa-check mr-1"></i> Atomic Number: ${inputNum} (Correct)</span>` 
+                : `<span class="text-rose-400"><i class="fa-solid fa-xmark mr-1"></i> Atomic Number: ${inputNum || 'Blank'} (Incorrect, Correct: ${el.number})</span>`;
+
+            typeFeedback.innerHTML = isTypeCorrect 
+                ? `<span class="text-emerald-400"><i class="fa-solid fa-check mr-1"></i> Classification: ${selectedType.toUpperCase()} (Correct)</span>` 
+                : `<span class="text-rose-400"><i class="fa-solid fa-xmark mr-1"></i> Classification: ${(selectedType || 'None').toUpperCase()} (Incorrect, Correct: ${el.type.toUpperCase()})</span>`;
+
+            const feedbackBox = document.getElementById('recall-feedback-box');
+            feedbackBox.className = `p-4 rounded-xl text-xs sm:text-sm border space-y-2 ${isNumCorrect && isTypeCorrect ? 'bg-emerald-950/40 border-emerald-500/50' : 'bg-rose-950/40 border-rose-500/50'}`;
+
+            document.getElementById('recall-action-container').classList.add('hidden');
+            feedbackBox.classList.remove('hidden');
+
+            // Save Result Breakdown
+            recallResults.push({
+                element: el,
+                numCorrect: isNumCorrect,
+                typeCorrect: isTypeCorrect,
+                givenNum: inputNum,
+                givenType: selectedType
+            });
+        }
+
+        function nextRecallElement() {
+            recallIndex++;
+            if (recallIndex < recallShuffledElements.length) {
+                renderRecallQuestion();
+            } else {
+                showRecallSummary();
+            }
+        }
+
+        function showRecallSummary() {
+            document.getElementById('recall-active-screen').classList.add('hidden');
+            const summaryScreen = document.getElementById('recall-summary-screen');
+            summaryScreen.classList.remove('hidden');
+
+            const totalMax = recallShuffledElements.length * 2;
+            const accuracy = Math.round((recallScore / totalMax) * 100);
+
+            document.getElementById('recall-final-score').innerText = `${recallScore} / ${totalMax}`;
+            document.getElementById('recall-final-accuracy').innerText = `${accuracy}%`;
+
+            const list = document.getElementById('recall-summary-list');
+            list.innerHTML = '';
+
+            recallResults.forEach(r => {
+                const item = document.createElement('div');
+                item.className = "p-3 rounded-xl bg-slate-950/80 border border-slate-800 flex justify-between items-center";
+                item.innerHTML = `
+                    <div>
+                        <span class="font-bold text-slate-200">${r.element.name} (${r.element.symbol})</span>
+                        <div class="text-[11px] text-slate-400">
+                            #${r.element.number} | ${r.element.type.toUpperCase()}
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="${r.numCorrect ? 'text-emerald-400' : 'text-rose-400'} font-semibold block">
+                            Num: ${r.numCorrect ? '✓' : '✗'}
+                        </span>
+                        <span class="${r.typeCorrect ? 'text-emerald-400' : 'text-rose-400'} font-semibold block">
+                            Class: ${r.typeCorrect ? '✓' : '✗'}
+                        </span>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+
+        /* ================= MODE 3: MEMORY MATCHING GAME LOGIC ================= */
+        function initMatchGame() {
+            clearInterval(matchTimerInterval);
+            matchMoves = 0;
+            matchedPairsCount = 0;
+            matchSeconds = 0;
+            flippedMatchCards = [];
+
+            document.getElementById('match-moves').innerText = '0';
+            document.getElementById('match-timer').innerText = '00:00';
+
+            const modeType = document.getElementById('match-mode-select').value;
+            
+            const shuffledElements = [...ELEMENTS].sort(() => 0.5 - Math.random()).slice(0, 6);
+            document.getElementById('match-score').innerText = `0 / 6`;
+
+            matchCards = [];
+            shuffledElements.forEach((el, index) => {
+                let valA = el.symbol;
+                let valB = el.name;
+
+                if (modeType === 'symbol-number') {
+                    valB = `#${el.number}`;
+                } else if (modeType === 'name-use') {
+                    valA = el.name;
+                    valB = el.uses.split(',')[0];
+                }
+
+                matchCards.push({ id: index, pairId: el.number, text: valA, sub: el.categoryLabel, type: 'A', element: el });
+                matchCards.push({ id: index, pairId: el.number, text: valB, sub: 'Property', type: 'B', element: el });
+            });
+
+            matchCards.sort(() => 0.5 - Math.random());
+
+            const grid = document.getElementById('match-grid');
+            grid.innerHTML = '';
+            matchCards.forEach((card, idx) => {
+                const cardEl = document.createElement('div');
+                cardEl.className = `perspective-1000 h-28 cursor-pointer`;
+                cardEl.innerHTML = `
+                    <div id="m-card-${idx}" onclick="handleMatchCardClick(${idx})" class="relative w-full h-full transform-style-3d transition-transform duration-500 rounded-2xl border border-slate-800 bg-slate-900 shadow-md">
+                        <div class="absolute inset-0 backface-hidden rounded-2xl bg-gradient-to-br from-slate-900 to-slate-950 flex flex-col items-center justify-center border border-slate-800 hover:border-cyan-500/50 transition">
+                            <i class="fa-solid fa-flask text-2xl text-slate-700"></i>
+                        </div>
+                        <div class="absolute inset-0 backface-hidden rotate-y-180 rounded-2xl bg-slate-800 flex flex-col items-center justify-center p-2 text-center border border-cyan-500/40">
+                            <span class="font-tech text-base font-bold text-white line-clamp-2">${card.text}</span>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(cardEl);
+            });
+
+            matchTimerInterval = setInterval(() => {
+                matchSeconds++;
+                const mins = String(Math.floor(matchSeconds / 60)).padStart(2, '0');
+                const secs = String(matchSeconds % 60).padStart(2, '0');
+                document.getElementById('match-timer').innerText = `${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function handleMatchCardClick(index) {
+            if (flippedMatchCards.length >= 2) return;
+            const cardInner = document.getElementById(`m-card-${index}`);
+            if (cardInner.classList.contains('rotate-y-180')) return;
+
+            playSynthSound('flip');
+            cardInner.classList.add('rotate-y-180');
+            flippedMatchCards.push({ index, card: matchCards[index] });
+
+            if (flippedMatchCards.length === 2) {
+                matchMoves++;
+                document.getElementById('match-moves').innerText = matchMoves;
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            const [c1, c2] = flippedMatchCards;
+            if (c1.card.pairId === c2.card.pairId && c1.index !== c2.index) {
+                playSynthSound('match');
+                matchedPairsCount++;
+                document.getElementById('match-score').innerText = `${matchedPairsCount} / 6`;
+
+                document.getElementById(`m-card-${c1.index}`).firstElementChild.nextElementSibling.classList.add('border-emerald-500', 'bg-emerald-950/40');
+                document.getElementById(`m-card-${c2.index}`).firstElementChild.nextElementSibling.classList.add('border-emerald-500', 'bg-emerald-950/40');
+
+                flippedMatchCards = [];
+
+                if (matchedPairsCount === 6) {
+                    clearInterval(matchTimerInterval);
+                    setTimeout(() => {
+                        alert(`🎉 Outstanding! You cleared the matching board in ${matchMoves} moves and ${document.getElementById('match-timer').innerText}!`);
+                    }, 400);
+                }
+            } else {
+                playSynthSound('wrong');
+                setTimeout(() => {
+                    document.getElementById(`m-card-${c1.index}`).classList.remove('rotate-y-180');
+                    document.getElementById(`m-card-${c2.index}`).classList.remove('rotate-y-180');
+                    flippedMatchCards = [];
+                }, 900);
+            }
+        }
+
+
+        /* ================= MODE 4: QUIZ BLITZ LOGIC ================= */
+        function resetQuizToStartScreen() {
+            clearInterval(quizTimerInterval);
+            document.getElementById('quiz-start-screen').classList.remove('hidden');
+            document.getElementById('quiz-active-screen').classList.add('hidden');
+        }
+
+        function updateQuizHighScores() {
+            document.getElementById('quiz-high-score').innerText = quizHighScore;
+            document.getElementById('quiz-high-streak').innerText = quizHighStreak;
+        }
+
+        function startQuiz() {
+            playSynthSound('click');
+            quizScore = 0;
+            quizStreak = 0;
+            quizCurrentQuestion = 0;
+            generateQuizQuestions();
+
+            document.getElementById('quiz-start-screen').classList.add('hidden');
+            document.getElementById('quiz-active-screen').classList.remove('hidden');
+
+            renderQuizQuestion();
+        }
+
+        function generateQuizQuestions() {
+            quizQuestions = [];
+            const elementsShuffled = [...ELEMENTS].sort(() => 0.5 - Math.random());
+
+            elementsShuffled.forEach(el => {
+                const qType = Math.floor(Math.random() * 3);
+                let questionObj = {};
+
+                if (qType === 0) {
+                    const wrongOpts = ELEMENTS.filter(e => e.symbol !== el.symbol).sort(() => 0.5 - Math.random()).slice(0, 3).map(e => e.name);
+                    const options = [...wrongOpts, el.name].sort(() => 0.5 - Math.random());
+                    questionObj = {
+                        category: "Chemical Symbol",
+                        question: `Which chemical element is represented by the symbol "${el.symbol}"?`,
+                        correct: el.name,
+                        options: options,
+                        explanation: `${el.name} has the atomic symbol "${el.symbol}" with atomic number ${el.number}.`
+                    };
+                } else if (qType === 1) {
+                    const wrongOpts = ELEMENTS.filter(e => e.number !== el.number).sort(() => 0.5 - Math.random()).slice(0, 3).map(e => `#${e.number}`);
+                    const options = [...wrongOpts, `#${el.number}`].sort(() => 0.5 - Math.random());
+                    questionObj = {
+                        category: "Atomic Number",
+                        question: `What is the atomic number of ${el.name} (${el.symbol})?`,
+                        correct: `#${el.number}`,
+                        options: options,
+                        explanation: `${el.name} contains ${el.number} protons in its atomic nucleus.`
+                    };
+                } else {
+                    const wrongOpts = ELEMENTS.filter(e => e.name !== el.name).sort(() => 0.5 - Math.random()).slice(0, 3).map(e => e.name);
+                    const options = [...wrongOpts, el.name].sort(() => 0.5 - Math.random());
+                    questionObj = {
+                        category: "Real-World Application",
+                        question: `Which element is primary used in: ${el.uses.split('.')[0]}?`,
+                        correct: el.name,
+                        options: options,
+                        explanation: `${el.name}: ${el.uses}`
+                    };
+                }
+                quizQuestions.push(questionObj);
+            });
+        }
+
+        function renderQuizQuestion() {
+            clearInterval(quizTimerInterval);
+            const q = quizQuestions[quizCurrentQuestion];
+
+            document.getElementById('quiz-score').innerText = quizScore;
+            document.getElementById('quiz-streak').innerText = `🔥 ${quizStreak}`;
+            document.getElementById('quiz-question-num').innerText = `Question ${quizCurrentQuestion + 1} / ${quizQuestions.length}`;
+            document.getElementById('quiz-category-tag').innerText = q.category;
+            document.getElementById('quiz-question-text').innerText = q.question;
+
+            const feedback = document.getElementById('quiz-feedback');
+            feedback.classList.add('hidden');
+
+            const optionsContainer = document.getElementById('quiz-options-container');
+            optionsContainer.innerHTML = '';
+
+            q.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = `quiz-opt-btn p-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-left font-medium text-slate-200 border border-slate-700 transition flex items-center justify-between group`;
+                btn.innerHTML = `<span>${opt}</span> <i class="fa-regular fa-circle text-slate-500 group-hover:text-cyan-400"></i>`;
+                btn.onclick = () => answerQuizQuestion(opt, q.correct, q.explanation);
+                optionsContainer.appendChild(btn);
+            });
+
+            quizTimeLeft = 10;
+            const timerBar = document.getElementById('quiz-timer-bar');
+            timerBar.style.width = '100%';
+
+            quizTimerInterval = setInterval(() => {
+                quizTimeLeft -= 0.1;
+                const percentage = Math.max(0, (quizTimeLeft / 10) * 100);
+                timerBar.style.width = `${percentage}%`;
+
+                if (quizTimeLeft <= 0) {
+                    clearInterval(quizTimerInterval);
+                    answerQuizQuestion(null, q.correct, `Time's up! ${q.explanation}`);
+                }
+            }, 100);
+        }
+
+        function answerQuizQuestion(selected, correct, explanation) {
+            clearInterval(quizTimerInterval);
+
+            const buttons = document.querySelectorAll('.quiz-opt-btn');
+            buttons.forEach(btn => btn.disabled = true);
+
+            const feedback = document.getElementById('quiz-feedback');
+            const feedbackText = document.getElementById('quiz-feedback-text');
+
+            if (selected === correct) {
+                playSynthSound('match');
+                quizStreak++;
+                const bonus = quizStreak > 1 ? quizStreak * 20 : 0;
+                const points = 100 + bonus;
+                quizScore += points;
+
+                feedback.className = "p-4 rounded-xl text-xs sm:text-sm font-medium border flex items-center justify-between bg-emerald-950/60 border-emerald-500/50 text-emerald-300";
+                feedbackText.innerText = `Correct! +${points} pts. ${explanation}`;
+            } else {
+                playSynthSound('wrong');
+                quizStreak = 0;
+                feedback.className = "p-4 rounded-xl text-xs sm:text-sm font-medium border flex items-center justify-between bg-rose-950/60 border-rose-500/50 text-rose-300";
+                feedbackText.innerText = `Incorrect! Correct answer: ${correct}. ${explanation}`;
+            }
+
+            feedback.classList.remove('hidden');
+
+            if (quizScore > quizHighScore) {
+                quizHighScore = quizScore;
+                localStorage.setItem('elementmaster_quiz_high', quizHighScore);
+            }
+            if (quizStreak > quizHighStreak) {
+                quizHighStreak = quizStreak;
+                localStorage.setItem('elementmaster_streak_high', quizHighStreak);
+            }
+            updateQuizHighScores();
+        }
+
+        function nextQuizQuestion() {
+            quizCurrentQuestion++;
+            if (quizCurrentQuestion < quizQuestions.length) {
+                renderQuizQuestion();
+            } else {
+                playSynthSound('match');
+                alert(`🏁 Quiz Blitz Complete!\nYour Final Score: ${quizScore}\nHighest Streak: ${quizHighStreak}`);
+                resetQuizToStartScreen();
+            }
+        }
+
+
+        /* ================= MODE 5: ELEMENT CODEX LOGIC ================= */
+        function renderCodex(filter = 'all') {
+            const grid = document.getElementById('codex-grid');
+            grid.innerHTML = '';
+
+            const filtered = filter === 'all' ? ELEMENTS : ELEMENTS.filter(e => e.type === filter);
+
+            filtered.forEach(el => {
+                const isMastered = masteredElements.includes(el.number);
+                const colors = getCategoryColorClass(el.category);
+
+                const card = document.createElement('div');
+                card.className = `bg-slate-900 rounded-2xl p-4 border ${colors.border} hover:border-cyan-400 transition cursor-pointer flex flex-col justify-between space-y-3 shadow-lg relative group`;
+                card.onclick = () => openModal(el.number);
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <span class="font-tech text-xs text-slate-500">#${el.number}</span>
+                        ${isMastered ? '<i class="fa-solid fa-circle-check text-emerald-400 text-sm" title="Mastered"></i>' : '<i class="fa-regular fa-circle text-slate-700 text-sm"></i>'}
+                    </div>
+
+                    <div class="text-center">
+                        <h4 class="font-tech text-4xl font-extrabold text-white group-hover:scale-110 transition duration-300">${el.symbol}</h4>
+                        <p class="font-bold text-slate-200 text-sm mt-1">${el.name}</p>
+                        <p class="text-[10px] text-slate-400 font-mono">${el.mass} u</p>
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+                        <span class="px-2 py-0.5 rounded-full ${colors.bg} ${colors.text} font-semibold">${el.categoryLabel}</span>
+                        <span class="text-slate-400 font-mono">${el.state}</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function filterCodex(category) {
+            playSynthSound('click');
+            document.querySelectorAll('.codex-filter-btn').forEach(btn => {
+                btn.className = "codex-filter-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400 border border-slate-800 hover:text-white";
+            });
+            event.target.className = "codex-filter-btn active px-3 py-1.5 rounded-lg bg-slate-800 text-cyan-400 font-semibold border border-slate-700";
+            renderCodex(category);
+        }
+
+
+        /* ================= MODAL LOGIC ================= */
+        function openModal(elementNumber) {
+            playSynthSound('click');
+            const el = ELEMENTS.find(e => e.number === elementNumber);
+            if (!el) return;
+
+            activeModalNumber = el.number;
+            const colors = getCategoryColorClass(el.category);
+
+            document.getElementById('modal-atomic-num').innerText = el.number;
+            document.getElementById('modal-symbol').innerText = el.symbol;
+            document.getElementById('modal-name').innerText = el.name;
+            document.getElementById('modal-mass').innerText = `${el.mass} u`;
+            document.getElementById('modal-config').innerText = el.config;
+            document.getElementById('modal-uses').innerText = el.uses;
+            document.getElementById('modal-fact').innerText = el.fact;
+            document.getElementById('modal-group-period').innerText = el.groupPeriod;
+            document.getElementById('modal-state').innerText = el.state;
+
+            const badge = document.getElementById('modal-category');
+            badge.innerText = el.categoryLabel;
+            badge.className = `px-2.5 py-0.5 rounded-full text-xs font-semibold border uppercase ${colors.border} ${colors.text} ${colors.bg}`;
+
+            const box = document.getElementById('modal-symbol-box');
+            box.className = `w-20 h-20 rounded-2xl flex flex-col items-center justify-center border-2 bg-slate-950 shadow-inner ${colors.border}`;
+
+            document.getElementById('element-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            playSynthSound('click');
+            document.getElementById('element-modal').classList.add('hidden');
+        }
+
+        function toggleModalMastery() {
+            if (!activeModalNumber) return;
+            playSynthSound('click');
+            const idx = masteredElements.indexOf(activeModalNumber);
+            if (idx > -1) {
+                masteredElements.splice(idx, 1);
+            } else {
+                masteredElements.push(activeModalNumber);
+            }
+            updateMasteryCounter();
+            renderCodex();
+            closeModal();
+        }
+    </script>
+</body>
+</html>
